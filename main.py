@@ -16,7 +16,7 @@ moviepy_config.change_settings({"IMAGEMAGICK_BINARY": "C:/Program Files/ImageMag
 
 
 prompt = """
-  please generate a random devotion base on a random Bible passage.   
+  please generate a random devotion as if it is written by gen z based on a random Bible passage.   
 
   guidelines to formatting:  
   - choose a passage of 1 or 2 Bible verses, and NO more.
@@ -25,7 +25,7 @@ prompt = """
   chosen, output the word "through" between the 1st and 2nd selected verse
   numbers (example: Mark 4 1 through 2.).
   - output the verse(s).
-  - output an encouraging devotion consisting of 4 sentences.
+  - output an encouraging devotion consisting of 4 sentences using gen z vocabulary and slang.
 
   example output: 
   John 3 16 through 17.  
@@ -34,12 +34,11 @@ prompt = """
   believes in him shall not perish but have eternal life. For God did not send
   his Son into the world to condemn the world, but to save the world through him.
 
-  We find a profound declaration of God's love for humanity. These verses remind
-  us that God's love is unconditional and boundless, extending to every individual
-  without exception. Through Jesus Christ, God offers us the gift of salvation,
-  not to condemn us, but to bring us into a life of eternal abundance and freedom.
-  Let us embrace this incredible love, sharing it with others as we walk in the
-  light of His grace.
+  Yo, these verses are all about how insanely deep God's love is for all of us.
+  It's like, no matter who you are or what you've done, His love is always there.
+  Through Jesus, God's giving us this epic gift of salvation, not to judge or condemn
+  us, but to bring us into a life that's full of eternal vibes and total freedom. 
+  Let's vibe with this amazing love, spread it around, and live in the light of His grace.
 """
 
 load_dotenv(find_dotenv())
@@ -139,7 +138,6 @@ def get_voice_over(input_text):
 
   sub_end_times.append(end_times[-1])  # end time of last word
 
-
 # create the whole video
 def create_video(devo, video_path, audio_path, music_path, output_path):
   audio_clip = AudioFileClip(audio_path)
@@ -202,9 +200,9 @@ def create_video(devo, video_path, audio_path, music_path, output_path):
 
 if __name__ == "__main__":
   video_path      = "mp/background1.mp4"           # original source for background video
-  music_path      = "mp/music2.mp3"                # rource for background music
+  music_path      = "mp/music1.mp3"                # rource for background music
   voice_over_path = "mp/voice_over.mp3"
-  output_path     = "mp/output5.mp4"
+  output_path     = "mp/output2.mp4"
 
   devo = get_devotion()
   print(devo)
