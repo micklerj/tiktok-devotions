@@ -15,11 +15,13 @@ import base64
 moviepy_config.change_settings({"IMAGEMAGICK_BINARY": "C:/Program Files/ImageMagick-7.1.1-Q16-HDRI/magick.exe"})
 
 
-prompt = """
+prompt1 = """
   please generate a random devotion as if it is written by gen z based on a random Bible passage.   
 
   guidelines to formatting:  
-  - choose a passage of 1 or 2 Bible verses, and NO more.
+  - choose a passage of 1 or 2 Bible verses, and NO more. Do not choose any of these passages: 
+"""
+prompt2 = """
   - output the name of the book of the Bible, followed by the chapter number,
   followed by the verse number(s) that you choose, followed by a period. If multiple verses are
   chosen, output the word "through" between the 1st and 2nd selected verse
@@ -54,6 +56,22 @@ sub_end_times   = []
 
 # generate the devotion with chatGPT
 def get_devotion():
+
+  # check the previous passages that we have already used
+  previous_devos = ""
+  with open('stats.txt', 'r') as file:
+    is_passage = False
+    for line in file:
+      if line.strip() == "--------------- end of passages ---------------":
+        is_passage = False
+      if is_passage:
+        previous_devos += line.strip() + ", "
+      if line.strip() == "---------- previously used passages: ----------":
+        is_passage = True
+
+  prompt = prompt1 + previous_devos[:-2] + prompt2
+  
+  # api call to generate the devotion
   response = client.chat.completions.create(
     model="gpt-3.5-turbo",
     temperature=0.8,
@@ -65,7 +83,16 @@ def get_devotion():
   )
   devotion = response.choices[0].message.content
 
-  # TODO: add passage to pool of already used passages so we dont re-use
+  # add passage to pool of already used passages so we dont re-use
+  lines = []
+  with open('stats.txt', 'r') as file:
+    for line in file:
+      if line.strip() == "--------------- end of passages ---------------":
+        lines.append(devotion.split('.')[0] + "\n")
+      lines.append(line)
+  
+  with open("stats.txt", 'w') as file:
+    file.writelines(lines)
 
   return devotion
 
@@ -199,29 +226,29 @@ def create_video(devo, video_path, audio_path, music_path, output_path):
 
 
 if __name__ == "__main__":
-  video_path      = "mp/background1.mp4"           # original source for background video
+  video_path      = "mp/background3.mp4"           # original source for background video
   music_path      = "mp/music1.mp3"                # rource for background music
   voice_over_path = "mp/voice_over.mp3"
   output_path     = "mp/output2.mp4"
 
-  devo = get_devotion()
-  print(devo)
+  # devo = get_devotion()
+  # print(devo)
+  devo = """
+  Psalm 46 10.  
+
+  Be still, and know that I am God.
+
+  Whoa, this verse is like a mega reminder to chill out and recognize the Almighty's power, yo. It's all about taking a sec to just be quiet, tune in, and feel His presence, you know? Like, God's 
+  saying, "Hey, I got this, just trust me and let go of all that stress and noise." So, let's take a breather, vibe in His peace, and trust that He's got everything under control. In the midst of 
+  the chaos, let's find our calm in His sovereignty and be still in His love, fam.
+  """
   get_voice_over(devo)                                                          # creates "mp/voice_over.mp3"
   create_video(devo, video_path, voice_over_path, music_path, output_path)      # creates "mp/output.mp4"
 
 
-
 # ------------------------------------------------- TESTING -------------------------------------------------
 
-  # devo = """
-  #   Philippians 4 13.
-
-  #   I can do all this through him who gives me strength.
-
-  #   In this powerful verse, we are reminded that through Christ, we have the strength to overcome any challenge or obstacle. 
-  #   Our faith in Him empowers us to face each day with confidence and courage. Let us lean on His promises and trust in His 
-  #   provision, knowing that we are never alone in our struggles.
-  # """
+  
 
   # audio_file = open("mp/slowed_voice_.mp3", "rb")
   # transcript = client.audio.transcriptions.create(
