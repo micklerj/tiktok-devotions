@@ -1,3 +1,5 @@
 .env
 mp/*
 stats.txt
+requirements.txt
+run.py
