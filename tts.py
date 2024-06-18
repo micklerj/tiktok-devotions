@@ -100,7 +100,6 @@ for i in sub_end_times:
   # slowed_clip = audio_clip.fx(vfx.speedx, .9)
   # slowed_clip.write_audiofile("mp/slow_voice_over.mp3")
 
-  # # TODO: increase pitch of voice
 
   # audio_clip.close()
   # slowed_clip.close()

@@ -27,7 +27,7 @@ prompt2 = """
   chosen, output the word "through" between the 1st and 2nd selected verse
   numbers (example: Mark 4 1 through 2.).
   - output the verse(s).
-  - output an encouraging devotion consisting of 4 sentences using gen z vocabulary and slang.
+  - output an encouraging devotion consisting of exactly 4 sentences using gen z vocabulary and slang.
 
   example output: 
   John 3 16 through 17.  
@@ -62,15 +62,17 @@ def get_devotion():
   with open('stats.txt', 'r') as file:
     is_passage = False
     for line in file:
-      if line.strip() == "--------------- end of passages ---------------":
+      if line.strip() == "---------------- end of passages ----------------":
         is_passage = False
       if is_passage:
         previous_devos += line.strip() + ", "
-      if line.strip() == "---------- previously used passages: ----------":
+      if line.strip() == "----------- previously used passages: -----------":
         is_passage = True
 
   prompt = prompt1 + previous_devos[:-2] + prompt2
   
+  # TODO: make loop to double check that a repeat passage was not chosen
+
   # api call to generate the devotion
   response = client.chat.completions.create(
     model="gpt-3.5-turbo",
@@ -87,7 +89,7 @@ def get_devotion():
   lines = []
   with open('stats.txt', 'r') as file:
     for line in file:
-      if line.strip() == "--------------- end of passages ---------------":
+      if line.strip() == "---------------- end of passages ----------------":
         lines.append(devotion.split('.')[0] + "\n")
       lines.append(line)
   
@@ -96,13 +98,40 @@ def get_devotion():
 
   return devotion
 
-# generate the voice over    and    save timestamps
-def get_voice_over(input_text):
+# generate the voice over with 11 labs    and    save timestamps
+def get_voice_over(input_text, voice_over_path):
 
-  # Daniel: onwK4e9ZLuTAKqWW03F9,   Josh: TxGEqnHWrfWFTfGW9XjX,   James: ZQe5CZNOzWyzPSCn5a3c,   Michael: flq6f7yk4E4fJM5XTYuZ
-  # TODO: automatically choose random voice, background video, and music
-  VOICE_ID = "flq6f7yk4E4fJM5XTYuZ"  
   XI_API_KEY = os.getenv("XI_API_KEY")
+
+  # choose random voice
+  voice_choice = random.randint(1, 3)
+  speaker_name = ""
+  if voice_choice == 1:
+    VOICE_ID = "onwK4e9ZLuTAKqWW03F9"    # Daniel 
+    speaker_name = "Daniel"
+  elif voice_choice == 2:
+    VOICE_ID = "TxGEqnHWrfWFTfGW9XjX"    # Josh 
+    speaker_name = "Josh"
+  else:
+    VOICE_ID = "flq6f7yk4E4fJM5XTYuZ"    # Michael 
+    speaker_name = "Michael"
+
+  # update stats.txt
+  lines = []
+  with open('stats.txt', 'r') as file:
+    for line in file:
+      if line.strip():
+        if line.strip().split()[0] == speaker_name:
+          cnt = int(line.strip().split()[-1])             # previous count
+          new_line = line.strip()[:(len(str(cnt)) * -1)]  # remove previous count
+          cnt += 1                                        # increment count
+          lines.append(new_line + str(cnt) + "\n")        # updated line with new count 
+          continue
+      lines.append(line)
+  
+  with open("stats.txt", 'w') as file:
+    file.writelines(lines)
+
 
   url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}/with-timestamps"
 
@@ -115,8 +144,8 @@ def get_voice_over(input_text):
     "text": ( input_text ),
     "model_id": "eleven_multilingual_v2",
     "voice_settings": {
-      "stability": 0.5,
-      "similarity_boost": 0.75
+      "stability": 0.25,
+      "similarity_boost": 0.65
     }
   }
 
@@ -142,7 +171,7 @@ def get_voice_over(input_text):
   audio_bytes = base64.b64decode(response_dict["audio_base64"])
 
   # save the voice over mp3 file
-  with open('mp/voice_over.mp3', 'wb') as f:
+  with open(voice_over_path, 'wb') as f:
     f.write(audio_bytes)
 
   # the 'alignment' entry contains the mapping between input characters and their timestamps
@@ -150,11 +179,11 @@ def get_voice_over(input_text):
   start_times = response_dict['alignment']['character_start_times_seconds']
   end_times = response_dict['alignment']['character_end_times_seconds']
 
-  
+  # save timestamps
   start_of_word_reached = False
   for char, start, end in zip(characters, start_times, end_times):
-    if (char.isspace() or char == '-') and start_of_word_reached:
-      sub_end_times.append(end)
+    if (char.isspace() or char == '-' or char == '—') and start_of_word_reached:
+      sub_end_times.append(end) 
       start_of_word_reached = False
 
     elif not char.isspace() and not start_of_word_reached:
@@ -222,50 +251,48 @@ def create_video(devo, video_path, audio_path, music_path, output_path):
   music.close()
   for clip in subs:
     clip.close()
+  
+  # update stats.txt
+  lines = []
+  with open('stats.txt', 'r') as file:
+    for line in file:
+      if line.strip():
+        if line.strip().split()[0] == music_path[3:-4]:
+          cnt = int(line.strip().split()[-1])             # previous count
+          new_line = line.strip()[:(len(str(cnt)) * -1)]  # remove previous count
+          cnt += 1                                        # increment count
+          lines.append(new_line + str(cnt) + "\n")        # updated line with new count 
+          continue
+        if line.strip().split()[0] == video_path[3:-4]:
+          cnt = int(line.strip().split()[-1])             # previous count
+          new_line = line.strip()[:(len(str(cnt)) * -1)]  # remove previous count
+          cnt += 1                                        # increment count
+          lines.append(new_line + str(cnt) + "\n")        # updated line with new count 
+          continue
+      lines.append(line)
+  
+  with open("stats.txt", 'w') as file:
+    file.writelines(lines)
 
 
 
 if __name__ == "__main__":
-  video_path      = "mp/background3.mp4"           # original source for background video
-  music_path      = "mp/music1.mp3"                # rource for background music
+
+  # choose random background video
+  random_num = random.randint(1, 3)
+  background_choice = str(random_num)
+  video_path = "mp/background" + background_choice + ".mp4"                     # original source for background video
+  
+  # choose random background music
+  random_num = random.randint(1, 2)
+  music_choice = str(random_num)
+  music_path = "mp/music" + music_choice + ".mp3"                               # rource for background music
+  
   voice_over_path = "mp/voice_over.mp3"
-  output_path     = "mp/output2.mp4"
+  output_path     = "mp/output7.mp4"
 
-  # devo = get_devotion()
-  # print(devo)
-  devo = """
-  Psalm 46 10.  
-
-  Be still, and know that I am God.
-
-  Whoa, this verse is like a mega reminder to chill out and recognize the Almighty's power, yo. It's all about taking a sec to just be quiet, tune in, and feel His presence, you know? Like, God's 
-  saying, "Hey, I got this, just trust me and let go of all that stress and noise." So, let's take a breather, vibe in His peace, and trust that He's got everything under control. In the midst of 
-  the chaos, let's find our calm in His sovereignty and be still in His love, fam.
-  """
-  get_voice_over(devo)                                                          # creates "mp/voice_over.mp3"
+  devo = get_devotion()
+  print(devo)
+  get_voice_over(devo, voice_over_path)                                         # creates "mp/voice_over.mp3"
   create_video(devo, video_path, voice_over_path, music_path, output_path)      # creates "mp/output.mp4"
 
-
-# ------------------------------------------------- TESTING -------------------------------------------------
-
-  
-
-  # audio_file = open("mp/slowed_voice_.mp3", "rb")
-  # transcript = client.audio.transcriptions.create(
-  #   file=audio_file,
-  #   model="whisper-1",
-  #   response_format="verbose_json",
-  #   timestamp_granularities=["word"]
-  # )
-
-  # # print(transcript.words)
-
-  # for i in transcript.words:
-  #   literal = i['word']
-  #   print(f'{literal} ', end='')
-
-
-  # slowed audio
-  # audio_clip = AudioFileClip("mp/my_voice_over.mp3")
-  # audio_clip = audio_clip.fx(vfx.speedx, .9)
-  # audio_clip.write_audiofile("mp/slowed_voice1.mp3")
