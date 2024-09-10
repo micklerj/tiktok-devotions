@@ -278,8 +278,8 @@ def create_video(devo, video_path, audio_path, music_path, output_path):
 if __name__ == "__main__":
 
   # choose random background video
-  random_num = random.randint(1, 3)
-  background_choice = str(random_num)
+  random_num = random.randint(1, 60)
+  background_choice = str(min(random_num, 4))
   video_path = "mp/background" + background_choice + ".mp4"                     # original source for background video
   
   # choose random background music
@@ -288,10 +288,11 @@ if __name__ == "__main__":
   music_path = "mp/music" + music_choice + ".mp3"                               # rource for background music
   
   voice_over_path = "mp/voice_over.mp3"
-  output_path     = "mp/output7.mp4"
+  output_path     = "mp/output9.mp4"
 
   devo = get_devotion()
   print(devo)
   get_voice_over(devo, voice_over_path)                                         # creates "mp/voice_over.mp3"
   create_video(devo, video_path, voice_over_path, music_path, output_path)      # creates "mp/output.mp4"
 
+  # TODO: use chatGPT for generating a caption
